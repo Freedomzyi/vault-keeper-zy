@@ -1,65 +1,111 @@
-# vault-keeper-ZY
+# vault-keeper-ZY — AI 自动维护 Obsidian 知识库
 
-AI 自动维护的 Obsidian 知识库 Skill。
+融合 Zettelkasten + PARA + Progressive Summarization + Karpathy 五层记忆的 AI 知识库托管 Skill。
 
-## 概述
+## 边界
 
-通过 OpenClaw 的心跳机制自动同步对话记录到 Obsidian 知识库，实现知识管理的全自动化。从对话中提炼知识点、管理卡片生命周期、维护知识库健康。
+**skill 只做 vault 内部操作**，跨 agent 协调留在 HEARTBEAT.md。
+
+见边界表：
+- vault-keeper 管：对话同步、卡片创建/生命周期、MOC 维护、健康检查
+- HEARTBEAT 管：触发调度、Codex/WorkBuddy 扫描、备份、踩坑日志、月度分析
+
+## 执行流程
+
+### 步骤 1：增量抓取
+- 读 memory/vault-keeper-state.json 获取 lastSeq
+- 调用 sessions_history 获取 lastSeq 之后的新消息
+- **幂等**：基于 seq 去重，重复执行不产生重复内容
+- **失败**：API 超时不丢 lastSeq，等下次心跳重试
+
+### 步骤 2：话题识别
+从新会话中提取：
+- 话题列表 → 决策记录 → 待办事项 → 知识点
+
+### 步骤 3：增量写入
+- 当日已有 对话记录/YYYY-MM-DD 主题.md → 追加新话题，不重写
+- 尚无 → 新建文件，含 YAML frontmatter
+
+### 步骤 4：知识卡片管理
+**创建条件：**
+- 同一主题 ≥3 次对话提及，或
+- 有明确决策/结论
+- 单次最多 5 张新卡片
+
+**反重复机制：**
+- 写入前调用 wiki_search / memory_search 查重
+- 已有同类内容 → 互补追加，不另起炉灶
+- 入库后在 系统/入库更新日志.md 追加一行记录
+
+### 步骤 5：MOC + 统计
+- 更新 对话总览.md（按月分组加新条目）
+- 更新 标签索引.md
+- 更新 ault 统计.md（命中明细 + 活跃度排行前5）
+
+## 知识生命周期
+
+`
+active → expires到期 → stale → 审核
+                                ├── 续期 → active
+                                ├── 复查 → review
+                                └── 无用 → archived
+`
+
+自动归档：文件 mtime ≥180 天 → 标 stale → 写入当期健康报告。
+
+## 笔记规范
+
+\\\yaml
+---
+date: YYYY-MM-DD
+tags: [#谁产出, #主题]
+status: active|review|stale|archived
+expires: YYYY-MM-DD
+---
+\\\
+
+**图谱着色**：#小龙虾🔴 / #Codex🟣 / #马维斯🟡 / #WorkBuddy🟢 / 无标签（翊哥）⚪
+
+## 同步触发
+
+由 HEARTBEAT 调度，skill 不关心触发时机。Hook 挂载点：
+
+| Hook | 返回值 |
+|------|--------|
+| on-heartbeat-end | {synced: bool, errors: []} |
+| on-session-end | {synced: bool} |
+| on-startup | {ok: bool} |
+
+## 状态文件
+
+memory/vault-keeper-state.json（独立于 heartbeat-state.json）：
+
+\\\json
+{
+  "lastSeq": 174,
+  "lastSyncDate": "2026-06-28",
+  "nextHealthCheck": "2026-07-05",
+  "lastHealthReport": "2026-06-28"
+}
+\\\
+
+## 健康检查
+
+- **每周**：断链/孤儿/重复/过期/待办/MOC一致性 → 报告写 系统/健康报告 YYYY-MM-DD.md
+- **每月**（第一个周一）：合并建议/过期处理/项目复盘/标签审查
+- **每季度**（第一个周一）：结构审查/目录健康/标签体系/MEMORY质量
+
+## 错误处理
+
+| 场景 | 策略 |
+|------|------|
+| vault 目录不存在 | 跳过，下次重试 |
+| 写入失败 | 不中断流程，记录 error |
+| API 超时 | 等下次心跳，不丢 lastSeq |
+| YAML 解析失败 | 跳过该文件，继续 |
 
 ## 依赖
 
-- OpenClaw 环境
-- `session_status` / `sessions_history` 等工具可用
-- `wiki_search` / `wiki_get` / `wiki_apply` 等 wiki 工具可用
-- Obsidian 知识库目录
-
-## 核心流程
-
-### 1. 对话同步（每次心跳执行）
-1. 基于 `lastSeq` 增量抓取新对话
-2. 话题识别：提取话题、决策、待办、知识点
-3. 写入 `对话记录/YYYY-MM-DD 主题.md`
-4. 关键知识点创建/更新 `知识卡片/`
-
-### 2. 知识卡片管理
-- 新主题被提及 ≥3 次或有明确结论 → 自动建卡
-- 卡片到期（expires）→ 标记 stale → 通知用户审核
-- 审核后：续期/归档/删除
-
-### 3. 健康检查
-- 每周：断链、孤儿笔记、过期检测
-- 每月：知识合并、项目复盘
-- 每季度：结构审查、标签审查
-
-### 4. MOC 维护
-- 对话总览.md 按月分组自动添加新条目
-- 标签索引.md 同步更新
-
-## 触发配置
-
-在 HEARTBEAT.md 中配置时机：
-
-```markdown
-### 📝 Obsidian 知识库同步（每次心跳结束时执行）
-
-在心跳处理函数中调用本 skill 的同步逻辑。
-```
-
-## 配置参数
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| VAULT_PATH | Obsidian 知识库根目录 | — |
-| LAST_SEQ_FILE | lastSeq 持久化路径 | memory/heartbeat-state.json |
-| MAX_PER_SYNC | 单次最大创建卡片数 | 5 |
-
-## 使用示例
-
-### 手动触发同步
-```powershell
-# 在 OpenClaw 工作流中调用
-Invoke-VaultKeeperSync -VaultPath "C:\Vault"
-```
-
-### 配置心跳
-在 HEARTBEAT.md 的同步流程中引用本 skill 的规则即可。
+- OpenClaw v2026.6+
+- sessions_history / wiki_search / wiki_get / wiki_apply / wiki_lint
+- Obsidian vault
