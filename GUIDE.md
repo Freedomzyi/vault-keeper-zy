@@ -15,7 +15,7 @@
 - vault-keeper-ZY 写笔记到本地 vault → OneDrive 自动同步到云端 → 手机/其他电脑的 Obsidian 打开同一个 vault
 - AI 写的东西立刻在手机上可看
 - 跨设备完全不用手动操作
-- ⚠️ 注意：如果两台机器同时跑 vault-keeper，会产生冲突——同一个人不要在两台机器同时用
+- ⚠️ 注意：如果两台机器同时跑 vault-keeper，会产生冲突——不要在两台机器同时用
 
 ### 已有 OneDrive vault 的用户
 
@@ -26,14 +26,13 @@
 1. 下载安装 Obsidian：[https://obsidian.md/download](https://obsidian.md/download)
 2. 打开 Obsidian → **Create a new vault** → 路径选 OneDrive 文件夹里：
    ```
-   C:\Users\你的用户名\OneDrive\张翊的知识库
+   C:\Users\你的用户名\OneDrive\我的知识库
    ```
 3. 在 vault 根目录下建好目录结构（见下一步）
 
 ### 如果你不用 OneDrive
 
 vault 放本地 D 盘也一样跑，只是换电脑或看手机就看不到 AI 写的内容。多设备用的话还是建议 OneDrive。
-| 基础文件 | AGENTS.md、HEARTBEAT.md 已有 |
 
 ## 第1步：安装 skill
 
@@ -96,7 +95,7 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.openclaw\workspace\
 
 ## 第4步：配置 vault 路径
 
-skill 需要知道 Obsidian vault 在哪。在 OpenClaw 配置中设置：
+skill 需要知道 Obsidian vault 在哪里。在 OpenClaw 配置中设置：
 
 ```json
 {
@@ -104,7 +103,7 @@ skill 需要知道 Obsidian vault 在哪。在 OpenClaw 配置中设置：
     "skills": {
       "vault-keeper-zy": {
         "config": {
-          "vaultPath": "C:\\Users\\17828\\OneDrive\\张翊的Obsidian知识库\\张翊的知识库"
+          "vaultPath": "C:\\Users\\你的用户名\\OneDrive\\你的知识库名"
         }
       }
     }
@@ -114,7 +113,7 @@ skill 需要知道 Obsidian vault 在哪。在 OpenClaw 配置中设置：
 
 或者设置环境变量：
 ```powershell
-$env:VAULT_KEEPER_PATH = "C:\Users\17828\OneDrive\张翊的Obsidian知识库\张翊的知识库"
+$env:VAULT_KEEPER_PATH = "C:\Users\你的用户名\OneDrive\你的知识库名"
 ```
 
 ## 第5步：首次健康检查
