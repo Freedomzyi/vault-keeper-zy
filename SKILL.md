@@ -1,4 +1,4 @@
-﻿---
+---
 name: "vault-keeper-zy"
 description: "AI托管Obsidian知识库Skill：自动同步+卡片生命周期+健康检查，HEARTBEAT解耦"
 ---
@@ -217,6 +217,57 @@ cp -r vault-keeper-zy ~/.openclaw/skills/
 - OpenClaw v2026.6+
 - 工具：`sessions_history`, `wiki_search`, `wiki_get`, `wiki_apply`, `wiki_lint`
 - Obsidian 知识库目录（通过环境变量或配置文件指定）
+
+## 许可证
+
+MIT
+
+
+## 🔧 执行层 — Python 工具箱
+
+确定性操作通过 `scripts/vault_tools.py` 执行，AI 负责语义层（话题识别、内容创作），脚本负责机械层。
+
+### 安装依赖
+
+```bash
+pip install pyyaml  # 可选，内置解析器已覆盖常规场景
+```
+
+### 命令一览
+
+| 命令 | 功能 |
+|------|------|
+| `python scripts/vault_tools.py validate <vault>` | YAML frontmatter 校验 |
+| `python scripts/vault_tools.py broken-links <vault>` | [[wikilink]] 断链检测 |
+| `python scripts/vault_tools.py orphans <vault>` | 零反向链接卡片检测 |
+| `python scripts/vault_tools.py duplicates <vault>` | 相似文件名/内容检测 |
+| `python scripts/vault_tools.py expired <vault>` | 过期 + 长期未改卡片检测 |
+| `python scripts/vault_tools.py moc <vault>` | 生成/更新 对话总览.md |
+| `python scripts/vault_tools.py stats <vault>` | 生成 vault 统计.md |
+| `python scripts/vault_tools.py health <vault>` | 运行完整健康检查，生成报告 |
+| `python scripts/vault_tools.py template card <title>` | 输出知识卡片 YAML 模板 |
+| `python scripts/vault_tools.py template conversation <date> <title>` | 输出对话记录模板 |
+
+### AI 与脚本分工
+
+| 层面 | 谁负责 | 说明 |
+|------|--------|------|
+| 话题识别 | AI | 从会话中提取话题、决策、待办 |
+| 内容创作 | AI | 写摘要、提炼知识点 |
+| 文件写入 | AI | 用 write/file_write 写 md 文件 |
+| YAML 校验 | 脚本 | 确定性检查 frontmatter 合规 |
+| 断链/孤儿/重复 | 脚本 | 可靠的静态分析 |
+| MOC 更新 | 脚本 | 从文件系统自动生成索引 |
+| 过期检测 | 脚本 | mtime + expires 字段检查 |
+| 健康报告 | 脚本 | 聚合所有检查结果 |
+
+### Hook 实现映射
+
+```
+on-heartbeat-end → AI 执行同步 + python vault_tools.py health
+on-session-end   → AI 执行同步 + python vault_tools.py validate
+on-startup       → AI 执行 python vault_tools.py validate
+```
 
 ## 许可证
 
