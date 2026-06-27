@@ -6,8 +6,33 @@
 
 | 条件 | 说明 |
 |------|------|
-| OpenClaw | v2026.6+ 版本 |
-| Obsidian 知识库 | 已有 vault 目录 |
+| **① Obsidian** | 必须已安装并建好知识库（[obsidian.md](https://obsidian.md) 免费下载） |
+| **② OneDrive（推荐）** | 把 vault 放 OneDrive 里，多设备自动同步 |
+| **③ OpenClaw** | v2026.6+ 版本 |
+
+### 为什么推荐 OneDrive？
+
+- vault-keeper-ZY 写笔记到本地 vault → OneDrive 自动同步到云端 → 手机/其他电脑的 Obsidian 打开同一个 vault
+- AI 写的东西立刻在手机上可看
+- 跨设备完全不用手动操作
+- ⚠️ 注意：如果两台机器同时跑 vault-keeper，会产生冲突——同一个人不要在两台机器同时用
+
+### 已有 OneDrive vault 的用户
+
+跳过建库步骤，直接跳到第1步。
+
+### 还没有 vault 的用户
+
+1. 下载安装 Obsidian：[https://obsidian.md/download](https://obsidian.md/download)
+2. 打开 Obsidian → **Create a new vault** → 路径选 OneDrive 文件夹里：
+   ```
+   C:\Users\你的用户名\OneDrive\张翊的知识库
+   ```
+3. 在 vault 根目录下建好目录结构（见下一步）
+
+### 如果你不用 OneDrive
+
+vault 放本地 D 盘也一样跑，只是换电脑或看手机就看不到 AI 写的内容。多设备用的话还是建议 OneDrive。
 | 基础文件 | AGENTS.md、HEARTBEAT.md 已有 |
 
 ## 第1步：安装 skill
