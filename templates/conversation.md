@@ -1,6 +1,6 @@
 ---
 date: {{DATE}}
-tags: [对话, {{TAG}}]
+tags: [对话, {{PRODUCER}}, {{CATEGORY}}]
 ---
 
 # {{DATE}} {{TOPIC}}
@@ -11,11 +11,23 @@ tags: [对话, {{TAG}}]
 
 {{SUMMARY}}
 
-## 关键产出
+## 关键决策
+
+| 决策 | 结论 |
+|------|------|
+| {{DECISION_1_TOPIC}} | {{DECISION_1_RESULT}} |
+
+## 待办事项
+
+- [ ] {{TODO_1}}
+- [ ] {{TODO_2}}
+
+## 产出
 
 - {{OUTPUT_1}}
 - {{OUTPUT_2}}
 
 ## 相关
 
-- [[知识卡片/{{RELATED_CARD}}]]
+- [[知识卡片/{{RELATED_CARD_1}}]]
+- [[知识卡片/{{RELATED_CARD_2}}]]
