@@ -1,0 +1,80 @@
+name: Vault Health Check
+
+on:
+  push:
+    paths:
+      - '**.md'
+  pull_request:
+    paths:
+      - '**.md'
+  schedule:
+    - cron: '0 2 * * 1'  # 每周一凌晨2点
+
+jobs:
+  vault-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: YAML Frontmatter 检查
+        run: |
+          echo "=== YAML Frontmatter 检查 ==="
+          FAIL=0
+          for f in $(find . -name "*.md" -not -path "./.github/*"); do
+            # 检查是否有 YAML frontmatter
+            HAS_YAML=$(head -1 "$f" | grep -c '^---$')
+            if [ "$HAS_YAML" -eq 0 ]; then
+              echo "⚠️  $f: 缺少 YAML frontmatter"
+              FAIL=1
+            fi
+          done
+          if [ "$FAIL" -eq 1 ]; then echo "❌ Frontmatter 检查失败"; exit 1; fi
+          echo "✅ Frontmatter 全部通过"
+
+      - name: Wikilink 断链检测
+        run: |
+          echo "=== Wikilink 断链检测 ==="
+          FAIL=0
+          for f in $(find . -name "*.md" -not -path "./.github/*"); do
+            # 提取所有 [[...]] 链接（跳过 URL 和图片）
+            LINKS=$(grep -oP '\[\[([^\]|#]+)' "$f" | sed 's/\[\[//' | sort -u)
+            for link in $LINKS; do
+              # 搜索对应文件是否存在
+              FOUND=$(find . -name "$link.md" -not -path "./.github/*" | head -1)
+              if [ -z "$FOUND" ]; then
+                echo "❌ $f → [[$link]]: 目标文件不存在"
+                FAIL=1
+              fi
+            done
+          done
+          if [ "$FAIL" -eq 1 ]; then echo "❌ 发现断链"; exit 1; fi
+          echo "✅ 无断链"
+
+      - name: 命名规范检查
+        run: |
+          echo "=== 命名规范检查 ==="
+          FAIL=0
+          for f in $(find . -name "*.md" -not -path "./.github/*" -not -path "./templates/*"); do
+            BASENAME=$(basename "$f" .md)
+            # 检查文件名是否包含非法字符
+            if echo "$BASENAME" | grep -q '[<>:"/\\|?*]'; then
+              echo "❌ $f: 文件名含非法字符"
+              FAIL=1
+            fi
+          done
+          if [ "$FAIL" -eq 1 ]; then echo "❌ 命名规范检查失败"; exit 1; fi
+          echo "✅ 命名规范通过"
+
+      - name: 生成检查报告
+        if: always()
+        run: |
+          echo "## Vault 健康检查报告" > vault-check-report.md
+          echo "**时间**: $(date '+%Y-%m-%d %H:%M')" >> vault-check-report.md
+          echo "**触发**: ${{ github.event_name }}" >> vault-check-report.md
+          echo "" >> vault-check-report.md
+          echo "| 检查项 | 结果 |" >> vault-check-report.md
+          echo "|--------|------|" >> vault-check-report.md
+          echo "| Frontmatter | ${{ job.status == 'success' && '✅' || '❌' }} |" >> vault-check-report.md
+          echo "| Wikilink | ${{ job.status == 'success' && '✅' || '❌' }} |" >> vault-check-report.md
+          echo "| 命名规范 | ${{ job.status == 'success' && '✅' || '❌' }} |" >> vault-check-report.md
+          cat vault-check-report.md
