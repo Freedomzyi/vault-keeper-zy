@@ -122,7 +122,7 @@ $env:VAULT_KEEPER_PATH = "C:\Users\你的用户名\OneDrive\你的知识库名"
 
 ```powershell
 # 运行健康检查
-Invoke-VaultKeeperHealthCheck -VaultPath "你的vault路径"
+python scripts/vault_tools.py health "你的vault路径"
 ```
 
 检查输出：
