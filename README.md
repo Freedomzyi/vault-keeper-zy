@@ -1,19 +1,50 @@
 # vault-keeper-ZY
 
-> AI 自动维护的 Obsidian 知识库 Skill
-> 融合 Zettelkasten + PARA + Progressive Summarization + Karpathy 五层记忆方法论
+AI 自动维护的 Obsidian 知识库 Skill。融合 Zettelkasten + PARA + Progressive Summarization + Karpathy 五层记忆方法论。
 
-## 这是什么
+一个 OpenClaw Skill，让 AI 自动帮你打理 Obsidian 知识库。你只管聊，知识库自动长。
 
-一个 OpenClaw Skill，让 AI 自动帮你打理 Obsidian 知识库。**你只管聊，知识库自动长。**
+## 核心功能
 
-### 核心能力
+- 🗂️ **自动同步** — 对话记录自动写入知识库
+- 🃏 **卡片管理** — 知识卡片生命周期（active → stale → archived）
+- 📝 **渐进摘要** — 从原始对话到精炼知识，逐层提纯
+- 🩺 **健康检查** — 周/月/季度自动扫描断链、孤儿笔记、过期卡片
+- 🔗 **MOC 维护** — 对话总览、标签索引自动更新
 
-- **自动同步** — 对话记录自动写入知识库
-- **卡片管理** — 知识卡片生命周期（active → stale → archived）
-- **渐进摘要** — 从原始对话到精炼知识，逐层提纯
-- **健康检查** — 周/月/季度自动扫描断链、孤儿笔记、过期卡片
-- **MOC 维护** — 对话总览、标签索引自动更新
+## 快速开始
+
+```bash
+# 安装
+git clone https://github.com/Freedomzyi/vault-keeper-zy.git ~/.openclaw/skills/vault-keeper-zy
+
+# 验证环境
+python scripts/vault_tools.py validate /path/to/your/vault
+
+# 运行健康检查
+python scripts/vault_tools.py health /path/to/your/vault
+
+# 生成 MOC
+python scripts/vault_tools.py moc /path/to/your/vault
+```
+
+## vault_tools.py 工具箱
+
+零依赖 Python 脚本，覆盖所有确定性操作：
+
+```bash
+python scripts/vault_tools.py validate <vault>      # YAML 校验
+python scripts/vault_tools.py broken-links <vault>  # 断链检测
+python scripts/vault_tools.py orphans <vault>       # 孤儿卡片
+python scripts/vault_tools.py duplicates <vault>    # 重复检测
+python scripts/vault_tools.py expired <vault>       # 过期检测
+python scripts/vault_tools.py moc <vault>            # MOC 生成
+python scripts/vault_tools.py stats <vault>          # 统计报表
+python scripts/vault_tools.py health <vault>         # 完整健康检查
+python scripts/vault_tools.py template card <title>  # 卡片模板
+```
+
+所有命令输出 JSON，可被 AI 直接解析。
 
 ## 目录结构
 
@@ -32,51 +63,16 @@ Vault/
 └── 模板/                    ← 笔记模板
 ```
 
-## 安装
+## 前置要求
 
-1. 将本 skill 放入 OpenClaw 的 skills 目录
-2. 在 HEARTBEAT.md 中配置同步逻辑
-3. 重启 OpenClaw 网关
-
-## 配置要求
-
-- OpenClaw v2026.6+ 环境
+- OpenClaw v2026.6+
 - Obsidian 知识库目录
-- HEARTBEAT.md 中的 vault 同步流程
+- Python 3.10+（仅脚本工具需要）
 
-## 笔记规范
+## 详细文档
 
-### YAML Frontmatter
-
-```yaml
----
-date: YYYY-MM-DD
-tags: [标签1, 标签2]
-aliases: [别名]
-status: active|review|stale|archived
-expires: YYYY-MM-DD     # 知识卡片必填
----
-```
-
-### 命名规范
-- 对话记录: `YYYY-MM-DD 主题关键词.md`（2~3个关键词，≤40字）
-- 知识卡片: 以主题命名，≤20字
-
-## 生命周期
-
-```
-创建 → active → expires到期 → stale → 审核
-                                        ├── 续期 → active
-                                        └── 归档 → archived
-```
-
-## 同步触发
-
-| 时机 | 方式 |
-|------|------|
-| 🟢 启动补偿 | 网关启动后首次消息 |
-| 🟡 心跳定期 | 每次心跳结束 |
-| 🔴 结束信号 | 结束语即时同步 |
+- [SKILL.md](./SKILL.md) — 完整规范（边界/规则/生命周期/Hook）
+- [GUIDE.md](./GUIDE.md) — 安装配置指南（10 分钟上手）
 
 ## 许可证
 
